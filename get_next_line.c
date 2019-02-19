@@ -6,7 +6,7 @@
 /*   By: emamenko <emamenko@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/02/17 11:18:13 by emamenko          #+#    #+#             */
-/*   Updated: 2019/02/18 21:04:49 by emamenko         ###   ########.fr       */
+/*   Updated: 2019/02/18 22:30:30 by emamenko         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,9 +85,9 @@ static int	get_pd(t_list **cpd, t_list *beg, const int fd, char *buf)
 static int	finish_read(char **line, char *s, t_fpt *d)
 {
 	int		i;
+	int		l;
 	char	*sub;
 
-	ft_strclr(d->buf);
 	i = ft_strchri(s, '\n');
 	if (i == -1)
 		ft_strsetdel(line, ft_strjoin(*line, s));
@@ -99,10 +99,14 @@ static int	finish_read(char **line, char *s, t_fpt *d)
 			ft_strsetdel(line, ft_strjoin(*line, sub));
 			ft_strdel(&sub);
 		}
-		if ((i + 1) != (int)ft_strlen(s))
+		l = (int)ft_strlen(s);
+		if ((i + 1) != l)
+		{
 			ft_strcpy(d->buf, s + i + 1);
+			d->buf[l - i - 1] = '\0';
+		}
 	}
-	ft_strclr(s);
+	s[0] = '\0';
 	return (i == -1 ? 0 : 1);
 }
 
