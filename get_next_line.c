@@ -6,7 +6,7 @@
 /*   By: emamenko <emamenko@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/02/17 11:18:13 by emamenko          #+#    #+#             */
-/*   Updated: 2019/02/18 22:30:30 by emamenko         ###   ########.fr       */
+/*   Updated: 2019/02/20 13:19:28 by emamenko         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,12 +24,13 @@ static int	prepare(const int fd, char **line, char **buf)
 	*line = ft_strnew(0);
 	if (*line == NULL)
 		return (-1);
-	*buf = ft_strnew(BUFF_SIZE);
+	*buf = malloc(sizeof(char) * (BUFF_SIZE + 1));
 	if (buf == NULL)
 	{
 		ft_strdel(line);
 		return (-1);
 	}
+	*buf[0] = '\0';
 	return (0);
 }
 
@@ -66,7 +67,7 @@ static int	get_pd(t_list **cpd, t_list *beg, const int fd, char *buf)
 		{
 			if (d->buf == NULL)
 				return (0);
-			ft_strcpy(buf, d->buf);
+			ft_memcpy(buf, d->buf, BUFF_SIZE + 1);
 			*cpd = el;
 			return (1);
 		}
@@ -90,7 +91,9 @@ static int	finish_read(char **line, char *s, t_fpt *d)
 
 	i = ft_strchri(s, '\n');
 	if (i == -1)
+	{
 		ft_strsetdel(line, ft_strjoin(*line, s));
+	}
 	else
 	{
 		if (i != 0)
@@ -100,11 +103,8 @@ static int	finish_read(char **line, char *s, t_fpt *d)
 			ft_strdel(&sub);
 		}
 		l = (int)ft_strlen(s);
-		if ((i + 1) != l)
-		{
-			ft_strcpy(d->buf, s + i + 1);
-			d->buf[l - i - 1] = '\0';
-		}
+		ft_strcpy(d->buf, s + i + 1);
+		d->buf[l - i - 1] = '\0';
 	}
 	s[0] = '\0';
 	return (i == -1 ? 0 : 1);
