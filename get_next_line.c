@@ -6,7 +6,7 @@
 /*   By: emamenko <emamenko@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/02/17 11:18:13 by emamenko          #+#    #+#             */
-/*   Updated: 2019/02/20 21:26:58 by emamenko         ###   ########.fr       */
+/*   Updated: 2019/02/20 23:02:57 by emamenko         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 #include "libft/libft.h"
 #include "get_next_line.h"
 
-static int	prepare(const int fd, char **line, char **buf)
+static int	prepare(const int fd, char **line)
 {
 	if (fd < 0)
 		return (-1);
@@ -24,12 +24,6 @@ static int	prepare(const int fd, char **line, char **buf)
 	*line = ft_strnew(0);
 	if (*line == NULL)
 		return (-1);
-	*buf = ft_strnew(BUFF_SIZE);
-	if (buf == NULL)
-	{
-		ft_strdel(line);
-		return (-1);
-	}
 	return (0);
 }
 
@@ -41,7 +35,7 @@ static int	init_fpt(t_list **fpt, const int fd)
 	if (d == NULL)
 		return (-1);
 	d->fd = fd;
-	d->buf = ft_strnew(BUFF_SIZE);
+	d->buf = ft_strnew(0);
 	if (d->buf == NULL)
 		return (-1);
 	*fpt = ft_lstnew(d, sizeof(t_fpt));
@@ -55,7 +49,7 @@ static int	init_fpt(t_list **fpt, const int fd)
 	return (1);
 }
 
-static int	get_pd(t_list **cpd, t_list *beg, const int fd, char *buf)
+static int	get_pd(t_list **cpd, t_list *beg, const int fd)
 {
 	t_list	*el;
 	t_fpt	*d;
@@ -68,7 +62,6 @@ static int	get_pd(t_list **cpd, t_list *beg, const int fd, char *buf)
 		{
 			if (d->buf == NULL)
 				return (-1);
-			ft_memcpy(buf, d->buf, BUFF_SIZE + 1);
 			*cpd = el;
 			return (1);
 		}
@@ -89,26 +82,26 @@ static int	finish_read(char **line, char *s, t_fpt *d)
 	int		i;
 	int		l;
 	char	*sub;
+	char	*buf;
 
-	i = ft_strchri(s, '\n');
+	buf = ft_strjoin(d->buf, s);
+	ft_strsetdel(&d->buf, ft_strnew(0));
+	i = ft_strchri(buf, '\n');
 	if (i == -1)
-	{
-		ft_strsetdel(line, ft_strjoin(*line, s));
-		d->buf[0] = '\0';
-	}
+		ft_strsetdel(line, ft_strjoin(*line, buf));
 	else
 	{
 		if (i != 0)
 		{
-			sub = ft_strsub(s, 0, i);
+			sub = ft_strsub(buf, 0, i);
 			ft_strsetdel(line, ft_strjoin(*line, sub));
 			ft_strdel(&sub);
 		}
-		l = (int)ft_strlen(s);
-		ft_strcpy(d->buf, s + i + 1);
-		d->buf[l - i - 1] = '\0';
+		l = (int)ft_strlen(buf);
+		ft_strsetdel(&d->buf, ft_strsub(buf, i + 1, l - i - 1));
 	}
-	s[0] = '\0';
+	ft_strclr(s);
+	ft_strdel(&buf);
 	return (i == -1 ? 0 : 1);
 }
 
@@ -120,22 +113,22 @@ int			get_next_line(const int fd, char **line)
 	ssize_t			c;
 	ssize_t			i;
 
-	if ((prepare(fd, line, &buf) == -1) ||
-		(i = (fpt == NULL) ? init_fpt(&d, fd) : get_pd(&d, fpt, fd, buf)) < 1)
+	if ((prepare(fd, line) == -1) ||
+		(i = (fpt == NULL) ? init_fpt(&d, fd) : get_pd(&d, fpt, fd)) < 1)
 		return (-1);
 	fpt = (fpt == NULL) ? d : fpt;
+	buf = ft_strnew(BUFF_SIZE);
 	while (1)
 	{
-		i = ft_strlen(buf);
-		if (ft_strchr(buf, '\n') == NULL)
+		if (ft_strchr(((t_fpt *)(d->content))->buf, '\n') == NULL)
 		{
-			if ((c = read(fd, buf + i, BUFF_SIZE - i)) < 0)
-				return (-1);
-			else if (c == 0 && i == 0)
-				return (ft_strlen(*line) > 0 ? 1 : 0);
-			buf[c + i] = (c + i < BUFF_SIZE) ? '\0' : buf[c + i];
+			if ((c = read(fd, buf, BUFF_SIZE)) < 0)
+				return (ft_freeret((void **)(&buf), -1));
+			else if (c == 0 && ft_strlen(((t_fpt *)(d->content))->buf) == 0)
+				return (ft_freeret((void **)(&buf),
+					ft_strlen(*line) > 0 ? 1 : 0));
 		}
 		if (finish_read(line, buf, (t_fpt *)(d->content)) == 1)
-			return (1);
+			return (ft_freeret((void **)(&buf), 1));
 	}
 }
