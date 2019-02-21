@@ -6,7 +6,7 @@
 /*   By: emamenko <emamenko@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/02/17 11:18:13 by emamenko          #+#    #+#             */
-/*   Updated: 2019/02/20 20:20:01 by emamenko         ###   ########.fr       */
+/*   Updated: 2019/02/20 21:26:58 by emamenko         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,8 +48,10 @@ static int	init_fpt(t_list **fpt, const int fd)
 	if (*fpt == NULL)
 	{
 		free(d->buf);
+		free(d);
 		return (-1);
 	}
+	free(d);
 	return (1);
 }
 
