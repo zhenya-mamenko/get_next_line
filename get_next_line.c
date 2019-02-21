@@ -6,31 +6,30 @@
 /*   By: emamenko <emamenko@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/02/17 11:18:13 by emamenko          #+#    #+#             */
-/*   Updated: 2019/02/20 13:19:28 by emamenko         ###   ########.fr       */
+/*   Updated: 2019/02/20 20:20:01 by emamenko         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <stdlib.h>
 #include <unistd.h>
-#include "libft.h"
+#include "libft/libft.h"
 #include "get_next_line.h"
 
 static int	prepare(const int fd, char **line, char **buf)
 {
-	if (fd < 3)
+	if (fd < 0)
 		return (-1);
 	if (line == NULL)
 		return (-1);
 	*line = ft_strnew(0);
 	if (*line == NULL)
 		return (-1);
-	*buf = malloc(sizeof(char) * (BUFF_SIZE + 1));
+	*buf = ft_strnew(BUFF_SIZE);
 	if (buf == NULL)
 	{
 		ft_strdel(line);
 		return (-1);
 	}
-	*buf[0] = '\0';
 	return (0);
 }
 
@@ -66,7 +65,7 @@ static int	get_pd(t_list **cpd, t_list *beg, const int fd, char *buf)
 		if (d->fd == fd)
 		{
 			if (d->buf == NULL)
-				return (0);
+				return (-1);
 			ft_memcpy(buf, d->buf, BUFF_SIZE + 1);
 			*cpd = el;
 			return (1);
@@ -93,6 +92,7 @@ static int	finish_read(char **line, char *s, t_fpt *d)
 	if (i == -1)
 	{
 		ft_strsetdel(line, ft_strjoin(*line, s));
+		d->buf[0] = '\0';
 	}
 	else
 	{
@@ -118,19 +118,19 @@ int			get_next_line(const int fd, char **line)
 	ssize_t			c;
 	ssize_t			i;
 
-	if (prepare(fd, line, &buf) == -1)
+	if ((prepare(fd, line, &buf) == -1) ||
+		(i = (fpt == NULL) ? init_fpt(&d, fd) : get_pd(&d, fpt, fd, buf)) < 1)
 		return (-1);
-	if ((i = (fpt == NULL) ? init_fpt(&d, fd) : get_pd(&d, fpt, fd, buf)) < 1)
-		return (i);
 	fpt = (fpt == NULL) ? d : fpt;
 	while (1)
 	{
 		i = ft_strlen(buf);
 		if (ft_strchr(buf, '\n') == NULL)
 		{
-			c = read(fd, buf + i, BUFF_SIZE - i);
-			if (c <= 0)
-				return (c);
+			if ((c = read(fd, buf + i, BUFF_SIZE - i)) < 0)
+				return (-1);
+			else if (c == 0 && i == 0)
+				return (ft_strlen(*line) > 0 ? 1 : 0);
 			buf[c + i] = (c + i < BUFF_SIZE) ? '\0' : buf[c + i];
 		}
 		if (finish_read(line, buf, (t_fpt *)(d->content)) == 1)
